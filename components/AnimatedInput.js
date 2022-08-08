@@ -106,10 +106,9 @@ const AnimatedInput = forwardRef((props, ref) => {
           setIsFocused(true);
           // props.onFocus?.(event);
         }}
-        autoCapitalize="none"
         autoCompleteType={props.autoCompleteType}
         textContentType={props.textContentType}
-      />
+      ></TextInput>
       <TouchableOpacity
         activeOpacity={1}
         style={[

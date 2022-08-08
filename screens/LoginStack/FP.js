@@ -17,13 +17,13 @@ export default function FP() {
   const auth = getAuth();
 
   const onSendPressed = () => {
-    sendPasswordResetEmail(auth, email)
-      .then(() => {
+    // sendPasswordResetEmail(auth, email)
+      // .then(() => {
         navigation.navigate("Forgot Password Modal");
-      })
-      .catch((error) => {
-        ReportError(error, email);
-      });
+      // })
+      // .catch((error) => {
+      //   ReportError(error, email);
+      // });
   };
 
   return (

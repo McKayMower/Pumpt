@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
+  Image,
 } from "react-native";
 import { FontAwesome5 } from "react-native-vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,21 +17,8 @@ import MapView from "react-native-maps";
 import * as Haptics from "expo-haptics";
 import { border, colors } from "../styles";
 import * as Location from "expo-location";
-
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
-
-const options = {
-  method: 'POST',
-  url: 'https://pumpt.glitch.me/get-price-zip-code',
-  data: {zipcode: 84065}
-};
-
-axios.request(options).then(function (response) {
-  console.log(response.data);
-}).catch(function (error) {
-  console.error(error);
-});
 
 const Map = () => {
   const mapRef = useRef();
@@ -87,6 +75,12 @@ const Map = () => {
     console.log(data);
     const coords = await Location.geocodeAsync(data.description);
     const { latitude, longitude } = coords[0];
+    const res = await Location.reverseGeocodeAsync({
+      latitude: latitude,
+      longitude: longitude,
+    });
+    await AsyncStorage.setItem("carZipcode", `${res[0].postalCode}`);
+
     const newRegion = {
       latitude: latitude,
       longitude: longitude,
@@ -108,15 +102,8 @@ const Map = () => {
       latitude: latitude,
       longitude: longitude,
     });
-    if (res[0].name && res[0].city && res[0].region && res[0].postalCode) {
-      setSearchText(
-        `${res[0].name}, ${res[0].city}, ${res[0].region}, ${res[0].postalCode}`
-      );
-      await AsyncStorage.setItem(
-        "carLocation",
-        `${res[0].name}, ${res[0].city}, ${res[0].region}, ${res[0].postalCode}`
-      );
-    } else if (res[0].name && res[0].city && res[0].region) {
+    await AsyncStorage.setItem("carZipcode", `${res[0].postalCode}`);
+    if (res[0].name && res[0].city && res[0].region) {
       setSearchText(`${res[0].name}, ${res[0].city}, ${res[0].region}`);
       await AsyncStorage.setItem(
         "carLocation",
@@ -187,8 +174,15 @@ const Map = () => {
           }, 250);
         }}
       >
-        <FontAwesome5 name="map-pin" style={styles.mapPin} size={50} />
+        <View style={styles.carPinView}>
+          <Image
+            source={require("../assets/car-pin.png")}
+            style={styles.carPin}
+          />
+        </View>
+        {/* <FontAwesome5 name="map-pin" style={styles.mapPin} size={50} /> */}
       </MapView>
+
       <LinearGradient
         // Background Linear Gradient
         colors={["rgba(0, 0, 0, 0.6)", "rgba(0, 0, 0, 0)"]}
@@ -240,6 +234,17 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingBottom: "8%",
     zIndex: 5,
+  },
+  carPinView: {
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    height: "10%",
+    bottom: "4.25%",
+  },
+  carPin: {
+    resizeMode: "contain",
+    height: "100%",
   },
   mapFMCMContainer: {
     alignItems: "center",

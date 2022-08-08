@@ -40,6 +40,7 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [publishableKey, setPublishableKey] = useState();
   const [appIsReady, setAppIsReady] = useState(false);
+  
   useEffect(() => {
     (async () => {
       try {

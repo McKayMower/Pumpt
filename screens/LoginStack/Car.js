@@ -45,13 +45,14 @@ export default function CreateCar() {
       return;
     }
     if (
-      fuelType.toLowerCase() === "unleaded" ||
+      fuelType.toLowerCase() === "regular" ||
+      fuelType.toLowerCase() === "midgrade" ||
       fuelType.toLowerCase() === "premium" ||
       fuelType.toLowerCase() === "diesel"
     ) {
     } else {
       Alert.alert(
-        "Please type 'unleaded', 'premium', or 'diesel' for the fuel type"
+        "Please type 'Regular', 'Midgrade', 'Premium', or 'Diesel' for the fuel type"
       );
       return;
     }

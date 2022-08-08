@@ -21,7 +21,6 @@ import ReportError from "../../functions/ReportError";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import SocialSigninButtons from "../../components/SocialSigninButtons";
-import CustomInput from "../../components/CustomInput";
 import CustomButton from "../../components/CustomButton";
 import AnimatedInput from "../../components/AnimatedInput";
 import { button } from "../../styles";
@@ -124,18 +123,6 @@ export default function Login() {
             setValue={setPassword}
             secureTextEntry={true}
           />
-          {/* <CustomInput
-            placeholder="Username"
-            value={email}
-            setValue={setEmail}
-            keyboardType="email-address"
-          />
-          <CustomInput
-            placeholder="Password"
-            value={password}
-            setValue={setPassword}
-            secureTextEntry={true}
-          /> */}
           <CustomButton
             text="Log In"
             type="primary"

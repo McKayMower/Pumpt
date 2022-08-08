@@ -20,12 +20,15 @@ export default function Order() {
   const [color, setColor] = useState();
   const [LPN, setLPN] = useState();
   const [fuelType, setFuelType] = useState();
+  const [carZipcode, setCarZipcode] = useState();
   const stripe = useStripe();
   const navigation = useNavigation();
 
   const fetchCarLocation = async () => {
     try {
       const storedCarLocation = await AsyncStorage.getItem("carLocation");
+      const storedCarZipcode = await AsyncStorage.getItem("carZipcode");
+      if (storedCarZipcode !== null) setCarZipcode(storedCarZipcode);
       if (storedCarLocation !== null) setCarLocation(storedCarLocation);
     } catch (error) {
       ReportError(error);
@@ -42,6 +45,8 @@ export default function Order() {
       const storedColor = await AsyncStorage.getItem("color");
       const storedLPN = await AsyncStorage.getItem("LPN");
       const storedFuelType = await AsyncStorage.getItem("fuelType");
+      const storedCarZipcode = await AsyncStorage.getItem("carZipcode");
+      if (storedCarZipcode !== null) setCarZipcode(storedCarZipcode);
       if (storedCarLocation !== null) setCarLocation(storedCarLocation);
       if (storedMake !== null && storedModel !== null && storedYear !== null)
         setMakeModelYear(`${storedMake}, ${storedModel}, ${storedYear}`);
@@ -72,37 +77,55 @@ export default function Order() {
     //   //phone: auth.currentUser.phoneNumber
     //   //address: user address
     // };
-
+    if (!carZipcode) {
+      console.log("no zipcode ask for it here to gather price information");
+    }
     if (!carLocation || !makeModelYear || !color || !LPN || !fuelType) {
       Alert.alert("Please make sure every field is completed.");
       return;
     }
     if (
-      fuelType.toLowerCase() === "unleaded" ||
+      fuelType.toLowerCase() === "regular" ||
+      fuelType.toLowerCase() === "midgrade" ||
       fuelType.toLowerCase() === "premium" ||
       fuelType.toLowerCase() === "diesel"
     ) {
     } else {
       Alert.alert(
-        "Please type 'unleaded', 'premium', or 'diesel' for the fuel type"
+        "Please type 'Regular', 'Midgrade', 'Premium', or 'Diesel' for the fuel type"
       );
-      return;
+      return; 
     }
     const body = {
       location: carLocation,
       makeModelYear: makeModelYear,
       color: color,
       LPN: LPN,
-      fuelType: fuelType.toLowerCase(),
+      fuelType: fuelType,
+      zipcode: carZipcode,
     };
-    /*
-    *
-    save car to async storage here
-    *
-    */
+
+    try {
+      await AsyncStorage.setItem("make", make);
+      await AsyncStorage.setItem("model", model);
+      await AsyncStorage.setItem("year", year);
+      await AsyncStorage.setItem("color", color);
+      await AsyncStorage.setItem("LPN", LPN);
+      await AsyncStorage.setItem("fuelType", fuelType);
+    } catch (error) {
+      ReportError(error);
+    }
+
+    console.log(fuelType)
     await axios
       .post(`${REACT_APP_PUMPT_API_URL}/pay`, body)
       .then(async (res) => {
+        if (res.data?.zipError) {
+          Alert.alert(
+            `The zipcode ${carZipcode} is not a serviceable zip code, please change the location of your vehicle.`
+          );
+          return;
+        }
         const clientSecret = res.data.clientSecret;
         await stripe
           .initPaymentSheet({
@@ -168,7 +191,8 @@ export default function Order() {
             placeholder="Fuel Type"
             value={fuelType}
             setValue={setFuelType}
-          />
+            pickerType="Fuel Type"
+          ></AnimatedInput>
           <CustomButton type="primary" text={`Get Pumpt!`} onPress={pay} />
           <CustomButton
             type="secondary"

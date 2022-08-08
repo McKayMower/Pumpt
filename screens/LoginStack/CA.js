@@ -59,7 +59,7 @@ export default function CA() {
           });
       })
       .catch((error) => {
-        ReportError(error);
+        ReportError(error, email);
         setEmail("");
         return;
       });
