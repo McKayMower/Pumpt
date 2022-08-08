@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SafeAreaView, Text, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { colors, text } from "../../styles";
@@ -8,9 +8,14 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import moment from "moment";
 
 export default function Schedule() {
+  const [initialDate, setInitialDate] = useState();
   const [pickedDate, setPickedDate] = useState("Select a date");
   const [pickedTime, setPickedTime] = useState("Select a date");
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+
+  useEffect(() => {
+    setInitialDate(calculateNearestValidDate());
+  }, []);
 
   const navigation = useNavigation();
 
@@ -21,9 +26,13 @@ export default function Schedule() {
   const hideDatePicker = () => {
     setDatePickerVisibility(false);
   };
-
+  const calculateNearestValidDate = () => {
+    const startDate = moment();
+    const remainder = 15 - (startDate.minute() % 15);
+    const newDate = moment(startDate).add(remainder, "minutes").toDate();
+    return new Date(newDate);
+  };
   const handleConfirm = (date) => {
-    console.log(date);
     setPickedDate(moment(date).format("MMMM Do, YYYY"));
     setPickedTime(
       moment(date).format("h:mma") +
@@ -46,7 +55,7 @@ export default function Schedule() {
     >
       <Background>
         <SafeAreaView style={styles.container}>
-          <Text style={text.screenHeader}>Schedule Us! </Text>
+          <Text style={text.screenHeader}>Schedule Us!</Text>
           <DateTimePickerModal
             value={new Date()}
             isVisible={isDatePickerVisible}
@@ -59,6 +68,16 @@ export default function Schedule() {
             maximumDate={new Date(moment().add(21, "days").toDate())}
             accentColor={colors.quaternaryText}
             minuteInterval={15}
+            date={initialDate}
+            onChange={(date) => {
+              setInitialDate(date);
+              setPickedDate(moment(date).format("MMMM Do, YYYY"));
+              setPickedTime(
+                moment(date).format("h:mma") +
+                  "-" +
+                  moment(date).add(1, "hour").format("h:mma")
+              );
+            }}
           />
           <CustomButton
             type="primary"
