@@ -18,7 +18,9 @@ export default function FPModal() {
         infoText="Please check your email for the forgot password link."
         onPress={() => {
           navigation.goBack();
-          navigation.navigate("Login");
+          setTimeout(() => {
+            navigation.goBack();
+          });
         }}
       />
     </View>

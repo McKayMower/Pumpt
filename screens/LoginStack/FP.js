@@ -37,7 +37,6 @@ export default function FP() {
         <SafeAreaView style={styles.container}>
           <Text style={text.screenHeader}>Reset Your Password</Text>
           <AnimatedInput
-            autoFocus={true}
             placeholder="Email"
             value={email}
             setValue={setEmail}

@@ -194,6 +194,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   agreement: {
+    justifyContent: "center",
+    alignItems: "center",
     width: "75%",
     marginVertical: "2.5%",
   },

@@ -84,6 +84,7 @@ const AnimatedInput = forwardRef((props, ref) => {
       />
 
       <TextInput
+        
         ref={mergeRef(inputRef, ref)}
         style={[animatedInput.style, props.style]}
         value={props.value}
