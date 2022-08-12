@@ -3,6 +3,7 @@ import {
   getAuth,
   sendEmailVerification,
   signInWithEmailAndPassword,
+  EmailAuthProvider,
 } from "firebase/auth";
 import {
   SafeAreaView,
@@ -62,7 +63,7 @@ export default function Login() {
     }
   };
 
-  const onSignInPressed = () => {
+  const onSignInPressed = async () => {
     if (!email) {
       Alert.alert("Please enter an email");
       return;
@@ -71,21 +72,27 @@ export default function Login() {
       Alert.alert("Please enter a password");
       return;
     }
-    submitData().then(async () => {
-      signInWithEmailAndPassword(auth, email, password)
-        .then(async (userCredentials) => {
-          if (!auth.currentUser?.emailVerified) {
-            Alert.alert(
-              "A verification email has been sent to your email, please verify your email to log in."
-            );
-            sendEmailVerification(auth.currentUser);
-            //async storage username here
-          }
-        })
-        .catch((error) => {
-          ReportError(error, email);
-        });
-    });
+
+    await submitData()
+      .then(() => {})
+      .catch((error) => ReportError(error));
+
+    await signInWithEmailAndPassword(auth, email, password)
+      .then(async (userCredentials) => {
+        if (!auth.currentUser.emailVerified) {
+          // const credential = EmailAuthProvider.credential(email, password);
+          await sendEmailVerification(auth.currentUser)
+            .then(() => {
+              Alert.alert(
+                "A verification email has been sent to your email, please verify your email to log in. If you cannot log in after you verified your email, try restarting the app."
+              );
+            })
+            .catch((error) => ReportError(error));
+        }
+      })
+      .catch((error) => {
+        ReportError(error, email);
+      });
   };
   const onSignUpPressed = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);

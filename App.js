@@ -31,16 +31,16 @@ const firebaseConfig = {
   appId: REACT_APP_FIREBASE_APP_ID,
   measurementId: REACT_APP_FIREBASE_MEAUSUREMENT_ID,
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = initializeAuth(app);
+
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [publishableKey, setPublishableKey] = useState();
   const [appIsReady, setAppIsReady] = useState(false);
-  
+
   useEffect(() => {
     (async () => {
       try {

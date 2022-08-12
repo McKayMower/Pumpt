@@ -3,14 +3,17 @@ import { SafeAreaView, Text, StyleSheet, Alert } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useNavigation } from "@react-navigation/native";
 import { text } from "../../styles";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import CustomButton from "../../components/CustomButton";
 import AnimatedInput from "../../components/AnimatedInput";
 import ReportError from "../../functions/ReportError";
 import Background from "../../components/Background";
 
 export default function Order() {
+  const [selectedCar, setSelectedCar] = useState();
+  const [carName, setCarName] = useState();
   const [carLocation, setCarLocation] = useState();
   const [makeModelYear, setMakeModelYear] = useState();
   const [color, setColor] = useState();
@@ -33,22 +36,24 @@ export default function Order() {
   const getUserData = async () => {
     //get all user information for autofill
     try {
-      const storedCarLocation = await AsyncStorage.getItem("carLocation");
-      const storedMake = await AsyncStorage.getItem("make");
-      const storedModel = await AsyncStorage.getItem("model");
-      const storedYear = await AsyncStorage.getItem("year");
-      const storedColor = await AsyncStorage.getItem("color");
-      const storedLPN = await AsyncStorage.getItem("LPN");
-      const storedFuelType = await AsyncStorage.getItem("fuelType");
-      const storedCarZipcode = await AsyncStorage.getItem("carZipcode");
-
-      if (storedCarZipcode !== null) setCarZipcode(storedCarZipcode);
-      if (storedCarLocation !== null) setCarLocation(storedCarLocation);
-      if (storedMake !== null && storedModel !== null && storedYear !== null)
-        setMakeModelYear(`${storedMake}, ${storedModel}, ${storedYear}`);
-      if (storedColor !== null) setColor(storedColor);
-      if (storedLPN !== null) setLPN(storedLPN);
-      if (storedFuelType !== null) setFuelType(storedFuelType);
+      const db = getFirestore();
+      const auth = getAuth();
+      const userDoc = doc(db, "Users", auth.currentUser.email);
+      await getDoc(userDoc).then((snapshot) => {
+        if (!snapshot.exists) return;
+        const carInfo = snapshot.data();
+        // Object.keys(carInfo.cars).forEach((car) => console.log(car));
+        const name = Object.keys(carInfo.cars)[0];
+        const firstCar = carInfo.cars[name];
+        setSelectedCar(firstCar);
+        setCarName(name);
+        setMakeModelYear(
+          `${firstCar.make}, ${firstCar.model}, ${firstCar.year}`
+        );
+        setColor(`${firstCar.color}`);
+        setLPN(`${firstCar.licensePlateNumber}`);
+        setFuelType(`${firstCar.fuelType}`);
+      });
     } catch (error) {
       ReportError(error);
     }
@@ -67,7 +72,11 @@ export default function Order() {
   }, [navigation]);
 
   const confirmPressed = () => {
-    navigation.navigate("Confirm Order");
+    navigation.navigate("Confirm Order", {
+      selectedCar: selectedCar,
+      name: carName,
+      location: carLocation,
+    });
   };
 
   return (
@@ -79,7 +88,7 @@ export default function Order() {
     >
       <Background>
         <SafeAreaView style={styles.container}>
-          <Text style={text.screenHeader}>Verify Car Information!</Text>
+          <Text style={text.screenHeader}>Select Your Car!</Text>
           <AnimatedInput
             placeholder="Car Location"
             value={carLocation}

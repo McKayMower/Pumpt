@@ -14,29 +14,29 @@ import {
   deleteUser,
   updateProfile,
 } from "firebase/auth";
+import { doc, getFirestore, setDoc } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { text, button } from "../../styles";
 import * as Haptics from "expo-haptics";
 import Background from "../../components/Background";
 import AnimatedInput from "../../components/AnimatedInput";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import SocialSigninButtons from "../../components/SocialSigninButtons";
 import ReportError from "../../functions/ReportError";
 import CustomButton from "../../components/CustomButton";
-import { text, button } from "../../styles";
+
 export default function CA() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState();
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
   const navigation = useNavigation();
-  const lastNameRef = useRef();
   const emailRef = useRef();
   const phoneNumberRef = useRef();
   const passwordRef = useRef();
   const repeatPasswordRef = useRef();
-
   const auth = getAuth();
 
   const onRegisterPressed = async () => {
@@ -45,14 +45,47 @@ export default function CA() {
       Alert.alert("Please make sure passwords match");
       return;
     }
+    if (!name) {
+      Alert.alert("Please enter your full name");
+      return;
+    }
+    if (!phoneNumber) {
+      Alert.alert("Please enter a phone number");
+      return;
+    }
+    if (!password || !passwordRepeat) {
+      Alert.alert("Please fill in the password fields");
+      return;
+    }
 
     await createUserWithEmailAndPassword(auth, email, password)
       .then((userCredentials) => {
         updateProfile(auth.currentUser, {
-          displayName: `${firstName} ${lastName}`,
+          displayName: `${name}`,
         })
-          .then(() => {
-            console.log("profile has been updated");
+          .then(async () => {
+            const db = getFirestore();
+            const userDoc = doc(db, "Users", auth.currentUser.email);
+            const docData = {
+              name: auth.currentUser.displayName,
+              email: auth.currentUser.email,
+              phoneNumber: phoneNumber,
+              cars: {},
+            };
+            await setDoc(userDoc, docData)
+              .then(() => {})
+              .catch((error) => ReportError(error));
+
+            await sendEmailVerification(auth.currentUser)
+              .then(async () => {
+                navigation.navigate("Car");
+              })
+              .catch((error) => {
+                auth.currentUser && deleteUser(auth.currentUser);
+                ReportError(error);
+              });
+            await AsyncStorage.setItem("email", email);
+            await AsyncStorage.setItem("password", password);
           })
           .catch((error) => {
             ReportError(error);
@@ -63,20 +96,8 @@ export default function CA() {
         setEmail("");
         return;
       });
-
-    sendEmailVerification(auth.currentUser)
-      .then(async () => {
-        navigation.navigate("Car");
-      })
-      .catch((error) => {
-        auth.currentUser && deleteUser(auth.currentUser);
-        ReportError(error);
-      });
   };
 
-  const onRegisterPressedTemp = () => {
-    navigation.navigate("Car");
-  };
   const onTermsOfUsePressed = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     console.log("terms of use pressed");
@@ -101,19 +122,10 @@ export default function CA() {
         <SafeAreaView style={styles.container}>
           <Text style={text.screenHeader}>Welcome to Pumpt!</Text>
           <AnimatedInput
-            placeholder="First Name"
-            textContentType={"givenName"}
-            value={firstName}
-            setValue={setFirstName}
-            onSubmitEditing={() => lastNameRef.current?.focus()}
-            blurOnSubmit={false}
-          />
-          <AnimatedInput
-            ref={lastNameRef}
-            placeholder="Last Name"
-            textContentType={"familyName"}
-            value={lastName}
-            setValue={setLastName}
+            placeholder="Full Name"
+            textContentType={"name"}
+            value={name}
+            setValue={setName}
             onSubmitEditing={() => emailRef.current?.focus()}
             blurOnSubmit={false}
           />

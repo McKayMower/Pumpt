@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView, Alert, StyleSheet, Text, View } from "react-native";
 import FocusAwareStatusBar from "../../components/FocusAwareStatusBar";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,18 +8,24 @@ import CustomButton from "../../components/CustomButton";
 import ReportError from "../../functions/ReportError";
 import Background from "../../components/Background";
 import { colors, text } from "../../styles";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
 
 export default function Profile() {
   const auth = getAuth();
+  const [name, setName] = useState(auth.currentUser.displayName);
   const navigation = useNavigation();
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", (e) => {
+    const unsubscribe = navigation.addListener("focus", async (e) => {
       // Prevent default behavior
       //e.preventDefault();
+
       // Do something manually
-      reload(auth.currentUser);
-      // ...
+      const db = getFirestore();
+      const userDoc = doc(db, "Users", auth.currentUser.email);
+      await getDoc(userDoc).then((snapshot) => {
+        if (snapshot.exists) setName(snapshot.data().name);
+      });
     });
 
     return unsubscribe;
@@ -41,9 +47,7 @@ export default function Profile() {
           style={styles.icon}
         />
         <View style={styles.textContainer}>
-          <Text style={text.profileText}>
-            Name: {auth.currentUser.displayName}
-          </Text>
+          <Text style={text.profileText}>Name: {name}</Text>
           <Text style={text.profileText}>Email: {auth.currentUser.email}</Text>
           <Text style={text.profileText}>
             Email Verified: {auth.currentUser.emailVerified ? "Yes" : "No"}

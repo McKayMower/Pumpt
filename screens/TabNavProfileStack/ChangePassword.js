@@ -19,7 +19,7 @@ const AsyncAlert = async () =>
   new Promise((resolve) => {
     Alert.alert(
       "Update Successful",
-      "Your Email Has Been Updated.",
+      "Your Password Has Been Updated.",
       [
         {
           text: "Ok",
@@ -87,7 +87,7 @@ export default function ChangeEmail() {
           />
           <AnimatedInput
             ref={passwordRef}
-            placeholder="Password"
+            placeholder="Current Password"
             value={currentPassword}
             setValue={setCurrentPassword}
             secureTextEntry={true}

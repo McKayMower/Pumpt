@@ -2,12 +2,14 @@ import React, { useState, useRef } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView, Alert, StyleSheet, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { arrayUnion, doc, getFirestore, updateDoc } from "firebase/firestore";
+import { text } from "../../styles";
 import CustomButton from "../../components/CustomButton";
 import AnimatedInput from "../../components/AnimatedInput";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import ReportError from "../../functions/ReportError";
 import Background from "../../components/Background";
-import { text } from "../../styles";
+import { getAuth } from "firebase/auth";
+
 const AsyncAlert = async () =>
   new Promise((resolve) => {
     Alert.alert(
@@ -25,44 +27,58 @@ const AsyncAlert = async () =>
     );
   });
 
+const validFuelType = (fuelType) => {
+  if (
+    fuelType.toLowerCase() === "regular" ||
+    fuelType.toLowerCase() === "midgrade" ||
+    fuelType.toLowerCase() === "premium" ||
+    fuelType.toLowerCase() === "diesel"
+  )
+    return true;
+  return false;
+};
 export default function CreateCar() {
   const navigation = useNavigation();
-  const [make, setMake] = useState();
-  const [model, setModel] = useState();
+  const [carName, setCarName] = useState("");
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
   const [year, setYear] = useState();
-  const [color, setColor] = useState();
-  const [LPN, setLPN] = useState();
-  const [fuelType, setFuelType] = useState();
+  const [color, setColor] = useState("");
+  const [LPN, setLPN] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const makeRef = useRef();
   const modelRef = useRef();
   const yearRef = useRef();
   const colorRef = useRef();
   const LPRef = useRef();
   const fuelTypeRef = useRef();
+  const auth = getAuth();
 
   const addCar = async () => {
-    if (!make || !model || !year || !color || !LPN || !fuelType) {
+    if (!make || !model || !year || !color || !LPN || !fuelType || !carName) {
       Alert.alert("Please make sure every field is completed.");
       return;
     }
-    if (
-      fuelType.toLowerCase() === "regular" ||
-      fuelType.toLowerCase() === "midgrade" ||
-      fuelType.toLowerCase() === "premium" ||
-      fuelType.toLowerCase() === "diesel"
-    ) {
-    } else {
-      Alert.alert(
+    if (!validFuelType(fuelType))
+      return Alert.alert(
         "Please type 'Regular', 'Midgrade', 'Premium', or 'Diesel' for the fuel type"
       );
-      return;
-    }
+
     try {
-      await AsyncStorage.setItem("make", make);
-      await AsyncStorage.setItem("model", model);
-      await AsyncStorage.setItem("year", year);
-      await AsyncStorage.setItem("color", color);
-      await AsyncStorage.setItem("LPN", LPN);
-      await AsyncStorage.setItem("fuelType", fuelType);
+      const db = getFirestore();
+      const userDoc = doc(db, "Users", auth.currentUser.email);
+      const car = {
+        make: make.charAt(0).toUpperCase() + make.slice(1).toLowerCase(),
+        model: model.charAt(0).toUpperCase() + model.slice(1).toLowerCase(),
+        year: year,
+        color: color.charAt(0).toUpperCase() + color.slice(1).toLowerCase(),
+        licensePlateNumber: LPN.toUpperCase(),
+        fuelType:
+          fuelType.charAt(0).toUpperCase() + fuelType.slice(1).toLowerCase(),
+      };
+      await updateDoc(userDoc, { cars: { [`${carName}`]: car } })
+        .then(() => {})
+        .catch((error) => ReportError(error));
     } catch (error) {
       ReportError(error);
     }
@@ -81,6 +97,14 @@ export default function CreateCar() {
         <SafeAreaView style={styles.container}>
           <Text style={text.screenHeader}>Create a Car!</Text>
           <AnimatedInput
+            placeholder="Name Your Car"
+            value={carName}
+            setValue={setCarName}
+            blurOnSubmit={false}
+            onSubmitEditing={() => makeRef.current?.focus()}
+          />
+          <AnimatedInput
+            ref={makeRef}
             placeholder="Make"
             value={make}
             setValue={setMake}

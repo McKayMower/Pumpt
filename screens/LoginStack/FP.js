@@ -4,12 +4,12 @@ import { SafeAreaView, Text, StyleSheet } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useNavigation } from "@react-navigation/native";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import { text } from "../../styles";
 
 import Background from "../../components/Background";
 import AnimatedInput from "../../components/AnimatedInput";
 import CustomButton from "../../components/CustomButton";
 import ReportError from "../../functions/ReportError";
-import { text } from "../../styles";
 
 export default function FP() {
   const [email, setEmail] = useState("");
@@ -17,13 +17,13 @@ export default function FP() {
   const auth = getAuth();
 
   const onSendPressed = () => {
-    // sendPasswordResetEmail(auth, email)
-      // .then(() => {
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
         navigation.navigate("Forgot Password Modal");
-      // })
-      // .catch((error) => {
-      //   ReportError(error, email);
-      // });
+      })
+      .catch((error) => {
+        ReportError(error, email);
+      });
   };
 
   return (

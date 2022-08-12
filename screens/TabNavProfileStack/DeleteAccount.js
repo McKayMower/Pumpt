@@ -14,6 +14,8 @@ import CustomButton from "../../components/CustomButton";
 import ReportError from "../../functions/ReportError";
 import Background from "../../components/Background";
 import { text } from "../../styles";
+import { deleteDoc, doc, getFirestore } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AsyncAlert = async () =>
   new Promise((resolve) => {
@@ -49,6 +51,7 @@ export default function DeleteAccount() {
       .then(async (res) => {
         deleteUser(auth.currentUser)
           .then(async () => {
+            await AsyncStorage.clear();
             await AsyncAlert();
           })
           .catch((error) => {

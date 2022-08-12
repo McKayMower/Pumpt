@@ -16,6 +16,7 @@ const ChooseName = (placeholder) => {
     case "Full Name":
     case "First Name":
     case "New First Name":
+    case "New Name":
       return "user";
     case "New Last Name":
     case "Last Name":
@@ -23,6 +24,8 @@ const ChooseName = (placeholder) => {
     case "Email":
       return "mail";
     case "Home Address":
+    case "Name Your Car":
+      return "tag";
     case "Billing Address":
       return "home";
     case "Phone Number":
@@ -44,6 +47,7 @@ const ChooseName = (placeholder) => {
     case "Password":
     case "New Password":
     case "Repeat Password":
+    case "Current Password":
     case "Confirm Password":
     case "Confirm New Password":
       return "lock";
@@ -84,7 +88,6 @@ const AnimatedInput = forwardRef((props, ref) => {
       />
 
       <TextInput
-        
         ref={mergeRef(inputRef, ref)}
         style={[animatedInput.style, props.style]}
         value={props.value}

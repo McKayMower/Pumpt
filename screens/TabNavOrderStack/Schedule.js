@@ -93,7 +93,7 @@ export default function Schedule() {
 
           <CustomButton
             type="primary"
-            text="Verify Car Information"
+            text="Select Which Car To Fill"
             onPress={verifyCarPressed}
           />
         </SafeAreaView>

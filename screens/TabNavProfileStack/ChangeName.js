@@ -6,36 +6,43 @@ import {
   EmailAuthProvider,
   getAuth,
   reauthenticateWithCredential,
+  reload,
   updateProfile,
 } from "firebase/auth";
+import { text } from "../../styles";
 
 import AnimatedInput from "../../components/AnimatedInput";
 import CustomButton from "../../components/CustomButton";
 import ReportError from "../../functions/ReportError";
 import Background from "../../components/Background";
-import { text } from "../../styles";
+import { getFirestore, updateDoc, doc } from "firebase/firestore";
 
 export default function ChangeName() {
   const [currentEmail, setCurrentEmail] = useState("");
-  const [newFirstName, setNewFirstName] = useState();
-  const [newLastName, setNewLastName] = useState();
+  const [newName, setNewName] = useState();
   const [password, setPassword] = useState("");
 
   const auth = getAuth();
   const navigation = useNavigation();
   const passwordRef = useRef();
-  const firstNameRef = useRef();
-  const lastNameRef = useRef();
+  const nameRef = useRef();
 
   const onUpdateNamePressed = () => {
     const credential = EmailAuthProvider.credential(currentEmail, password);
     reauthenticateWithCredential(auth.currentUser, credential)
       .then(() => {
         updateProfile(auth.currentUser, {
-          displayName: `${newFirstName} ${newLastName}`,
+          displayName: `${newName}`,
         })
-          .then(() => {
-            console.log("profile has been updated");
+          .then(async () => {
+            const db = getFirestore();
+            const userDoc = doc(db, "Users", auth.currentUser.email);
+            await updateDoc(userDoc, { name: newName })
+              .then(() => {
+                reload(auth.currentUser);
+                console.log("name updated");
+              })
+              .catch((error) => ReportError(error));
             navigation.goBack();
           })
           .catch((error) => {
@@ -72,22 +79,14 @@ export default function ChangeName() {
             value={password}
             setValue={setPassword}
             secureTextEntry={true}
-            onSubmitEditing={() => firstNameRef.current?.focus()}
+            onSubmitEditing={() => nameRef.current?.focus()}
             blurOnSubmit={false}
           />
           <AnimatedInput
-            ref={firstNameRef}
-            placeholder="New First Name"
-            value={newFirstName}
-            setValue={setNewFirstName}
-            onSubmitEditing={() => lastNameRef.current?.focus()}
-            blurOnSubmit={false}
-          />
-          <AnimatedInput
-            ref={lastNameRef}
-            placeholder="New Last Name"
-            value={newLastName}
-            setValue={setNewLastName}
+            ref={nameRef}
+            placeholder="New Name"
+            value={newName}
+            setValue={setNewName}
           />
           <CustomButton
             text="Update Name"
