@@ -69,6 +69,13 @@ export default function Profile() {
             }}
           />
           <CustomButton
+            text="Edit Cars"
+            type="primary"
+            onPress={() => {
+              navigation.navigate("Edit Cars");
+            }}
+          />
+          <CustomButton
             text="Delete My Account"
             type="primary"
             onPress={() => {

@@ -16,23 +16,17 @@ import CustomButton from "../../components/CustomButton";
 import Background from "../../components/Background";
 import axios from "axios";
 import ReportError from "../../functions/ReportError";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { doc, getDoc, getFirestore, updateDoc } from "firebase/firestore";
 
 export default function ConfirmOrder({ route }) {
   const navigation = useNavigation();
   const db = getFirestore();
   const auth = getAuth();
-
-  const { selectedCar, name, location } = route.params;
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  const [loading, setLoading] = useState(false);
-  const [day, setDay] = useState();
-  const [time, setTime] = useState();
-  const [car, setCar] = useState(selectedCar);
-  const carLocation = location;
-  const carName = name;
 
+  const { selectedCar, location, day, time } = route.params;
+  const [loading, setLoading] = useState(false);
+  const [car, setCar] = useState(selectedCar);
   const billingDetails = {
     name: auth.currentUser.displayName,
     email: auth.currentUser.email,
@@ -42,17 +36,6 @@ export default function ConfirmOrder({ route }) {
   };
 
   useEffect(() => {
-    (async () => {
-      const storedDay = await AsyncStorage.getItem("day");
-      const storedTime = await AsyncStorage.getItem("time");
-      if (storedDay === null || storedTime === null) {
-        alert("An error occurred with scheduling. Please retry.");
-        navigation.navigate("Schedule");
-      }
-      setDay(storedDay);
-      setTime(storedTime);
-      setCar(selectedCar);
-    })();
     initializePaymentSheet();
   }, []);
 
@@ -136,6 +119,7 @@ export default function ConfirmOrder({ route }) {
             "Your payment method has been saved. You will be charged when we fill your tank."
           );
           setLoading(false);
+          //send user informations to database
         }
       })
       .catch((error) => ReportError(error));
@@ -160,7 +144,7 @@ export default function ConfirmOrder({ route }) {
             Between: <Text style={styles.pickedText}>{time}</Text>
           </Text>
           <Text style={[text.profileText, styles.scheduleText]}>
-            For {carName}:
+            For {car.name}:
             <Text style={styles.pickedText}>
               {"\n\t"}
               Make: {car.make}
@@ -177,7 +161,7 @@ export default function ConfirmOrder({ route }) {
             </Text>
           </Text>
           <Text style={[text.profileText, styles.scheduleText]}>
-            Location: <Text style={styles.pickedText}>{carLocation}</Text>
+            Location: <Text style={styles.pickedText}>{location}</Text>
           </Text>
           <View style={styles.disclaimerContainer}>
             <Text
@@ -226,11 +210,13 @@ const styles = StyleSheet.create({
     marginBottom: "2.5%",
   },
   scheduleText: {
+    color: colors.logoColor,
     width: "80%",
     textAlign: "justify",
     fontWeight: "bold",
   },
   pickedText: {
+    color: colors.quaternaryText,
     fontWeight: "normal",
   },
 });

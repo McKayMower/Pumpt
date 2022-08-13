@@ -11,6 +11,7 @@ export default text = StyleSheet.create({
     fontWeight: tertiaryFontWeight,
     marginVertical: "10%",
     color: colors.screenHeader.color,
+    alignSelf: "center",
   },
   profileText: {
     fontSize: 20,

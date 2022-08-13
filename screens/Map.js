@@ -29,7 +29,6 @@ const Map = () => {
   const [mapMode, setMapMode] = useState("dark");
   const [permissions, setPermissions] = useState({});
   const [mapType, setMapType] = useState("standard");
-
   useEffect(() => {
     const askForPermissions = async () => {
       const foregroundPermission =

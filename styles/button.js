@@ -9,6 +9,7 @@ export default button = StyleSheet.create({
     padding: "5%",
     marginVertical: "2.5%",
     alignItems: "center",
+    alignSelf: "center",
   },
   container_primary: {
     backgroundColor: colors.button.backgroundColorPrimary,

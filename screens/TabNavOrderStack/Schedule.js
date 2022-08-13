@@ -7,7 +7,6 @@ import CustomButton from "../../components/CustomButton";
 import Background from "../../components/Background";
 import moment from "moment";
 import ScheduleModal from "../../components/ScheduleModal";
-import { NotoSansNewTaiLue_400Regular } from "@expo-google-fonts/dev";
 
 export default function Schedule() {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -41,13 +40,16 @@ export default function Schedule() {
       );
       return;
     }
-    try {
-      await AsyncStorage.setItem("day", pickedDate);
-      await AsyncStorage.setItem("time", pickedTime);
-    } catch (error) {
-      ReportError(error);
-    }
-    navigation.navigate("Car Information");
+    // try {
+    //   await AsyncStorage.setItem("day", pickedDate);
+    //   await AsyncStorage.setItem("time", pickedTime);
+    // } catch (error) {
+    //   ReportError(error);
+    // }
+    navigation.navigate("Car Select", {
+      day: pickedDate,
+      time: pickedTime,
+    });
   };
   return (
     <View

@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, Text, StyleSheet, Alert } from "react-native";
+import {
+  SafeAreaView,
+  Text,
+  StyleSheet,
+  Alert,
+  View,
+  TouchableOpacity,
+} from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useNavigation } from "@react-navigation/native";
-import { text } from "../../styles";
+import { border, colors, text } from "../../styles";
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,16 +17,12 @@ import CustomButton from "../../components/CustomButton";
 import AnimatedInput from "../../components/AnimatedInput";
 import ReportError from "../../functions/ReportError";
 import Background from "../../components/Background";
+import { Feather } from "react-native-vector-icons";
 
-export default function Order() {
-  const [selectedCar, setSelectedCar] = useState();
-  const [carName, setCarName] = useState();
-  const [carLocation, setCarLocation] = useState();
-  const [makeModelYear, setMakeModelYear] = useState();
-  const [color, setColor] = useState();
-  const [LPN, setLPN] = useState();
-  const [fuelType, setFuelType] = useState();
-  const [carZipcode, setCarZipcode] = useState();
+export default function CarSelect({ route }) {
+  const [carLocation, setCarLocation] = useState("");
+  const [carZipcode, setCarZipcode] = useState("");
+  const [carList, setCarList] = useState([]);
   const navigation = useNavigation();
 
   const fetchCarLocation = async () => {
@@ -34,25 +37,13 @@ export default function Order() {
   };
 
   const getUserData = async () => {
-    //get all user information for autofill
     try {
       const db = getFirestore();
       const auth = getAuth();
       const userDoc = doc(db, "Users", auth.currentUser.email);
       await getDoc(userDoc).then((snapshot) => {
         if (!snapshot.exists) return;
-        const carInfo = snapshot.data();
-        // Object.keys(carInfo.cars).forEach((car) => console.log(car));
-        const name = Object.keys(carInfo.cars)[0];
-        const firstCar = carInfo.cars[name];
-        setSelectedCar(firstCar);
-        setCarName(name);
-        setMakeModelYear(
-          `${firstCar.make}, ${firstCar.model}, ${firstCar.year}`
-        );
-        setColor(`${firstCar.color}`);
-        setLPN(`${firstCar.licensePlateNumber}`);
-        setFuelType(`${firstCar.fuelType}`);
+        setCarList(snapshot.data().carList);
       });
     } catch (error) {
       ReportError(error);
@@ -71,11 +62,12 @@ export default function Order() {
     return unsubscribe;
   }, [navigation]);
 
-  const confirmPressed = () => {
-    navigation.navigate("Confirm Order", {
-      selectedCar: selectedCar,
-      name: carName,
+  const onCarPicked = (car) => {
+    navigation.navigate("Confirm", {
+      selectedCar: car,
       location: carLocation,
+      day: route.params.day,
+      time: route.params.time,
     });
   };
 
@@ -87,40 +79,36 @@ export default function Order() {
       }}
     >
       <Background>
-        <SafeAreaView style={styles.container}>
-          <Text style={text.screenHeader}>Select Your Car!</Text>
+      <SafeAreaView style={styles.container}>
+        <Text style={text.screenHeader}>Select Your Car!</Text>
           <AnimatedInput
             placeholder="Car Location"
             value={carLocation}
             setValue={setCarLocation}
           />
-          <AnimatedInput
-            placeholder="Make, Model, Year"
-            value={makeModelYear}
-            setValue={setMakeModelYear}
-          />
-          <AnimatedInput
-            placeholder="Color"
-            value={color}
-            setValue={setColor}
-          />
-          <AnimatedInput
-            placeholder="License Plate"
-            value={LPN}
-            setValue={setLPN}
-            maxLength={8}
-          />
-          <AnimatedInput
-            placeholder="Fuel Type"
-            value={fuelType}
-            setValue={setFuelType}
-            pickerType="Fuel Type"
-          ></AnimatedInput>
-          <CustomButton
-            type="primary"
-            text={`Confirm`}
-            onPress={confirmPressed}
-          />
+          {carList.map((car, idx) => (
+            <View
+              key={idx}
+              style={{
+                width: "100%",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <TouchableOpacity
+                style={styles.carListContainer}
+                onPress={() => onCarPicked(car)}
+              >
+                <Text style={styles.carNameText}>{car.name}</Text>
+                <Feather
+                  name="chevron-right"
+                  style={styles.iconStyle}
+                  size={styles.iconStyle.size}
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
+
           <CustomButton
             type="secondary"
             text={`Go Back`}
@@ -136,5 +124,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
+  },
+  carListContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+    width: "80%",
+    borderBottomWidth: 1,
+    marginVertical: "2.5%",
+    padding: "5%",
+    fontSize: 18,
+    borderColor: colors.borderColor,
+    borderRadius: border.borderRadius,
+  },
+  iconStyle: {
+    color: colors.textInput.iconColor,
+    size: 30,
+    position: "absolute",
+    right: "2.5%",
+  },
+  carNameText: {
+    fontSize: 18,
+    color: "white",
   },
 });

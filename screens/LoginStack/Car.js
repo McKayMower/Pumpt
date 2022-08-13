@@ -13,8 +13,8 @@ import { getAuth } from "firebase/auth";
 const AsyncAlert = async () =>
   new Promise((resolve) => {
     Alert.alert(
-      "You have successfully added a car!",
-      "Please check your inbox for a verification email to log in!",
+      "Account Created!",
+      "Your car has been added! Please check your inbox for a verification email to log in to Pumpt!",
       [
         {
           text: "ok",
@@ -28,15 +28,12 @@ const AsyncAlert = async () =>
   });
 
 const validFuelType = (fuelType) => {
-  if (
-    fuelType.toLowerCase() === "regular" ||
-    fuelType.toLowerCase() === "midgrade" ||
-    fuelType.toLowerCase() === "premium" ||
-    fuelType.toLowerCase() === "diesel"
-  )
+  const type = fuelType.toLowerCase();
+  if (type === "regular" || type === "premium" || type === "diesel")
     return true;
   return false;
 };
+
 export default function CreateCar() {
   const navigation = useNavigation();
   const [carName, setCarName] = useState("");
@@ -61,13 +58,14 @@ export default function CreateCar() {
     }
     if (!validFuelType(fuelType))
       return Alert.alert(
-        "Please type 'Regular', 'Midgrade', 'Premium', or 'Diesel' for the fuel type"
+        "Please type 'Regular', 'Premium', or 'Diesel' for the fuel type"
       );
 
     try {
       const db = getFirestore();
       const userDoc = doc(db, "Users", auth.currentUser.email);
       const car = {
+        name: carName,
         make: make.charAt(0).toUpperCase() + make.slice(1).toLowerCase(),
         model: model.charAt(0).toUpperCase() + model.slice(1).toLowerCase(),
         year: year,
@@ -76,7 +74,7 @@ export default function CreateCar() {
         fuelType:
           fuelType.charAt(0).toUpperCase() + fuelType.slice(1).toLowerCase(),
       };
-      await updateDoc(userDoc, { cars: { [`${carName}`]: car } })
+      await updateDoc(userDoc, { carList: arrayUnion(car) })
         .then(() => {})
         .catch((error) => ReportError(error));
     } catch (error) {

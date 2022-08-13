@@ -70,7 +70,7 @@ export default function CA() {
               name: auth.currentUser.displayName,
               email: auth.currentUser.email,
               phoneNumber: phoneNumber,
-              cars: {},
+              carList: [],
             };
             await setDoc(userDoc, docData)
               .then(() => {})
