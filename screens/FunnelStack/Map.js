@@ -12,7 +12,6 @@ import {
 import { Modalize } from "react-native-modalize";
 import { Feather } from "react-native-vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import GoogleSearch from "../../components/GoogleSearch";
 import MapView from "react-native-maps";
 import * as Haptics from "expo-haptics";
@@ -93,7 +92,6 @@ export default function Map({ route }) {
       latitude: latitude,
       longitude: longitude,
     });
-    await AsyncStorage.setItem("carZipcode", `${res[0].postalCode}`);
 
     const newRegion = {
       latitude: latitude,
