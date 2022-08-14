@@ -75,14 +75,15 @@ export default function Profile() {
               navigation.navigate("Edit Cars");
             }}
           />
+
+          <CustomButton text="Logout" type="secondary" onPress={handleLogout} />
           <CustomButton
             text="Delete My Account"
-            type="primary"
+            type="tertiary"
             onPress={() => {
               navigation.navigate("Delete Account");
             }}
           />
-          <CustomButton text="Logout" type="secondary" onPress={handleLogout} />
         </View>
       </SafeAreaView>
     </Background>

@@ -6,7 +6,9 @@ import { NavigationContainer } from "@react-navigation/native";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { FjallaOne_400Regular } from "@expo-google-fonts/dev";
 import * as SplashScreen from "expo-splash-screen";
-import TabNavigator from "./components/TabNavigator";
+import HomeNavigator from "./components/HomeNavigator";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import FunnelStack from "./screens/FunnelStack/FunnelStack";
 import LoginStack from "./screens/LoginStack/LoginStack";
 import axios from "axios";
 import * as Font from "expo-font";
@@ -31,10 +33,12 @@ const firebaseConfig = {
   appId: REACT_APP_FIREBASE_APP_ID,
   measurementId: REACT_APP_FIREBASE_MEAUSUREMENT_ID,
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = initializeAuth(app);
 
 SplashScreen.preventAutoHideAsync();
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -58,7 +62,7 @@ export default function App() {
             setPublishableKey(res.data.publishableKey);
           })
           .catch((error) => {
-            console.log(`error in useEffectPublishable: ${error}`);
+            console.log(`error in useEffectPublishableKey: ${error}`);
           });
       };
       fetchPublishableKey();
@@ -95,7 +99,18 @@ export default function App() {
       {loggedIn && (
         <StripeProvider publishableKey={publishableKey}>
           <NavigationContainer>
-            <TabNavigator />
+            <Stack.Navigator>
+              <Stack.Screen
+                name="Home Navigator"
+                component={HomeNavigator}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Funnel Stack"
+                component={FunnelStack}
+                options={{ headerShown: false }}
+              />
+            </Stack.Navigator>
           </NavigationContainer>
         </StripeProvider>
       )}

@@ -69,7 +69,7 @@ export default function EditCars() {
             </View>
           ))}
           <TouchableOpacity
-            style={styles.carListContainer}
+            style={[styles.carListContainer, { marginBottom: "5%" }]}
             onPress={() =>
               navigation.navigate("Edit Car", { car: {}, add: true })
             }

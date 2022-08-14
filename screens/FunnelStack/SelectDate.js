@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import { SafeAreaView, Text, StyleSheet, View, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { TabRouter, useNavigation } from "@react-navigation/native";
 import { colors, text } from "../../styles";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../components/CustomButton";
 import Background from "../../components/Background";
 import moment from "moment";
 import ScheduleModal from "../../components/ScheduleModal";
 
-export default function Schedule() {
+export default function Schedule({ route }) {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [pickedDate, setPickedDate] = useState("Schedule a Date");
-  const [pickedTime, setPickedTime] = useState("Schedule a Date");
+  const [pickedDate, setPickedDate] = useState("Schedule a Day");
+  const [pickedTime, setPickedTime] = useState("Schedule a Time");
   const navigation = useNavigation();
   const [initialDate, setInitialDate] = useState();
 
@@ -31,26 +30,22 @@ export default function Schedule() {
         moment(date).add(1, "hour").format("h:mma")
     );
     hideDatePicker();
-  };
-
-  const verifyCarPressed = async () => {
-    if (pickedDate === "Schedule a Date") {
-      Alert.alert(
-        "Please Schedule a Date and a 1-hour time window for us to fill up your vehicle."
-      );
-      return;
-    }
-    // try {
-    //   await AsyncStorage.setItem("day", pickedDate);
-    //   await AsyncStorage.setItem("time", pickedTime);
-    // } catch (error) {
-    //   ReportError(error);
-    // }
-    navigation.navigate("Car Select", {
-      day: pickedDate,
-      time: pickedTime,
+    navigation.navigate("Confirm", {
+      day:
+        pickedDate === "Schedule a Day"
+          ? moment(date).format("MMMM Do, YYYY")
+          : pickedDate,
+      time:
+        pickedTime === "Schedule a Time"
+          ? moment(date).format("h:mma") +
+            "-" +
+            moment(date).add(1, "hour").format("h:mma")
+          : pickedTime,
+      selectedCar: route.params.car,
+      location: route.params.carLocation,
     });
   };
+
   return (
     <View
       style={{
@@ -60,7 +55,7 @@ export default function Schedule() {
     >
       <Background>
         <SafeAreaView style={styles.container}>
-          <Text style={text.screenHeader}>Ready? Schedule Us!</Text>
+          <Text style={text.screenHeader}>Schedule A Date!</Text>
           <View style={styles.textView}>
             <Text style={[text.profileText, styles.scheduleText]}>
               Your Next Fill Up:{" "}
@@ -71,10 +66,10 @@ export default function Schedule() {
           <CustomButton
             type="primary"
             text={
-              pickedDate !== "Schedule a Date" &&
-              pickedTime !== "Schedule a Date"
+              pickedDate !== "Schedule a Day" &&
+              pickedTime !== "Schedule a Time"
                 ? "Change Date"
-                : "Schedule A Date Here"
+                : "Schedule Here"
             }
             onPress={showDatePicker}
           />
@@ -94,9 +89,9 @@ export default function Schedule() {
           />
 
           <CustomButton
-            type="primary"
-            text="Select Which Car To Fill"
-            onPress={verifyCarPressed}
+            type="secondary"
+            text="Go Back"
+            onPress={() => navigation.navigate("Map")}
           />
         </SafeAreaView>
       </Background>
@@ -109,12 +104,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
-  title: {
-    fontSize: 25,
-    fontWeight: "bold",
-    color: "#051c60",
-    marginVertical: "10%",
-  },
   scheduleText: {
     width: "80%",
     textAlign: "justify",
@@ -125,5 +114,6 @@ const styles = StyleSheet.create({
   },
   textView: {
     marginVertical: "2.5%",
+    justifyContent: "center",
   },
 });

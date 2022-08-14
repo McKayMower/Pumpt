@@ -7,29 +7,45 @@ import {
   Dimensions,
   Alert,
   Image,
+  Text,
 } from "react-native";
-import { FontAwesome5 } from "react-native-vector-icons";
+import { Modalize } from "react-native-modalize";
+import { Feather } from "react-native-vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import FocusAwareStatusBar from "../components/FocusAwareStatusBar";
-import GoogleSearch from "../components/GoogleSearch";
+import GoogleSearch from "../../components/GoogleSearch";
 import MapView from "react-native-maps";
 import * as Haptics from "expo-haptics";
-import { border, colors } from "../styles";
+import { border, colors } from "../../styles";
 import * as Location from "expo-location";
+import { useNavigation } from "@react-navigation/native";
+import MapButton from "../../components/MapButton";
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
 
-const Map = () => {
+export default function Map({ route }) {
+  const { cars } = route.params;
+  const [carList, setCarList] = useState([]);
+  const navigation = useNavigation();
   const mapRef = useRef();
+  const modalRef = useRef();
   const timerRef = useRef();
+  const [carLocation, setCarLocation] = useState({});
+  const [carZipcode, setCarZipcode] = useState();
   const [searchText, setSearchText] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [findingMe, setFindingMe] = useState(false);
   const [mapMode, setMapMode] = useState("dark");
   const [permissions, setPermissions] = useState({});
   const [mapType, setMapType] = useState("standard");
+  const initialRegion = {
+    latitude: 40.76069676597343,
+    longitude: -111.88878037561432,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  };
   useEffect(() => {
+    setCarList(cars);
     const askForPermissions = async () => {
       const foregroundPermission =
         await Location.requestForegroundPermissionsAsync();
@@ -71,7 +87,6 @@ const Map = () => {
 
   const handleSearchSubmisison = async (data, details = null) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    console.log(data);
     const coords = await Location.geocodeAsync(data.description);
     const { latitude, longitude } = coords[0];
     const res = await Location.reverseGeocodeAsync({
@@ -101,34 +116,29 @@ const Map = () => {
       latitude: latitude,
       longitude: longitude,
     });
-    await AsyncStorage.setItem("carZipcode", `${res[0].postalCode}`);
-    if (res[0].name && res[0].city && res[0].region) {
-      setSearchText(`${res[0].name}, ${res[0].city}, ${res[0].region}`);
-      await AsyncStorage.setItem(
-        "carLocation",
-        `${res[0].name}, ${res[0].city}, ${res[0].region}`
-      );
-    } else if (res[0].name && res[0].city) {
-      setSearchText(`${res[0].name}, ${res[0].city}`);
-      await AsyncStorage.setItem(
-        "carLocation",
-        `${res[0].name}, ${res[0].city}`
-      );
-    } else if (res[0].name) {
-      setSearchText(res[0].name);
-      await AsyncStorage.setItem("carLocation", `${res[0].name}`);
-    }
+    const resat0 = res[0];
+    setSearchText(`${resat0.name}, ${resat0.city}, ${resat0.region}`);
+    setCarLocation({
+      name: resat0.name,
+      city: resat0.city,
+      zipcode: resat0.postalCode,
+      state: resat0.region,
+    });
   };
 
   const findMe = async () => {
     setFindingMe(true);
+
     if (!permissions.granted || !permissions.canAskAgain) {
       Alert.alert(
         "Please allow Pumpt to use your current location: settings -> privacy -> location services -> Pumpt -> 'While Using the App'"
       );
+      setFindingMe(false);
       return;
     }
-    const location = await Location.getCurrentPositionAsync({ accuracy: 6 });
+
+    // const location = await Location.getCurrentPositionAsync({ accuracy: 6 });
+    const location = await Location.getLastKnownPositionAsync({ accuracy: 6 });
 
     mapRef.current?.animateToRegion(
       {
@@ -139,7 +149,6 @@ const Map = () => {
       },
       1000
     );
-
     setFindingMe(false);
   };
 
@@ -150,15 +159,9 @@ const Map = () => {
         ...StyleSheet.absoluteFillObject,
       }}
     >
-      <FocusAwareStatusBar barStyle={"light-content"} />
       <MapView
         ref={mapRef}
-        initialRegion={{
-          latitude: 40.76069676597343,
-          longitude: -111.88878037561432,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
+        initialRegion={initialRegion}
         userInterfaceStyle={mapMode}
         mapType={mapType}
         style={styles.map}
@@ -170,29 +173,109 @@ const Map = () => {
           if (timerRef.current) clearTimeout(timerRef.current);
           timerRef.current = setTimeout(() => {
             handleRegionChangeComplete(region);
-          }, 250);
+          }, 500);
         }}
+      />
+      <MapButton
+        type="primary"
+        text="Confirm"
+        color={colors.navbar.iconColor}
+        onPress={modalRef.current?.open}
+      />
+      <Modalize
+        ref={modalRef}
+        style={{ position: "absolute" }}
+        openAnimationConfig={{
+          timing: { duration: 560 },
+        }}
+        handlePosition="inside"
+        handleStyle={styles.handle}
+        modalStyle={styles.modalStyle}
+        adjustToContentHeight={true}
       >
-        <View style={styles.carPinView}>
-          <Image
-            source={require("../assets/car-pin.png")}
-            style={styles.carPin}
-          />
+        <Text style={styles.modalTitle}>Select A Car To Fill!</Text>
+        <View style={{ alignItems: "center" }}>
+          {carList.map((car, idx) => (
+            <View
+              key={idx}
+              style={{
+                width: "100%",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <TouchableOpacity
+                style={styles.carListContainer}
+                onPress={() => {
+                  if (
+                    !(
+                      carLocation.name &&
+                      carLocation.zipcode &&
+                      carLocation.state &&
+                      carLocation.city
+                    )
+                  )
+                    return Alert.alert(
+                      "Inavlid Area",
+                      "Please select a valid area."
+                    );
+                  navigation.navigate("Schedule", {
+                    car: car,
+                    carLocation: carLocation,
+                  });
+                }}
+              >
+                <Text style={styles.carNameText}>{car.name}</Text>
+                <Feather
+                  name="chevron-right"
+                  style={styles.iconStyle}
+                  size={styles.iconStyle.size}
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
+          {/* <TouchableOpacity
+            style={[styles.carListContainer, { marginBottom: "5%" }]}
+            onPress={() =>
+              navigation.navigate("Add Car", { carLocation: carLocation })
+            }
+          >
+            <Text style={styles.carNameText}>Add Another...</Text>
+            <Feather
+              name="plus"
+              style={styles.iconStyle}
+              size={styles.iconStyle.size}
+            />
+          </TouchableOpacity> */}
         </View>
-        {/* <FontAwesome5 name="map-pin" style={styles.mapPin} size={50} /> */}
-      </MapView>
-
+        <View style={{ paddingBottom: "15%" }} />
+      </Modalize>
+      <View style={styles.carPinView}>
+        <Image
+          source={require("../../assets/car-pin.png")}
+          style={styles.carPin}
+        />
+      </View>
       <LinearGradient
-        // Background Linear Gradient
+        // Linear Gradient Behind The Search Bar
         colors={["rgba(0, 0, 0, 0.6)", "rgba(0, 0, 0, 0)"]}
         style={styles.linearGradient}
       />
-      <GoogleSearch
-        styles={searchStyles}
-        textInputProps={textInputProps}
-        minLength={1}
-        onPress={handleSearchSubmisison}
-      />
+      <View style={styles.searchView}>
+        <TouchableOpacity onPress={navigation.goBack}>
+          <Feather
+            name="chevron-left"
+            size={styles.searchBack.size}
+            style={styles.searchBack}
+          />
+        </TouchableOpacity>
+        <GoogleSearch
+          styles={searchStyles}
+          textInputProps={textInputProps}
+          minLength={1}
+          onPress={handleSearchSubmisison}
+        />
+      </View>
       <View style={styles.mapFMCMContainer}>
         <TouchableOpacity
           onPress={() => {
@@ -202,13 +285,13 @@ const Map = () => {
           }}
           style={styles.findMe}
         >
-          <FontAwesome5
-            name="location-arrow"
-            size={25}
+          <Feather
+            name="navigation"
+            size={styles.containerIcons.size}
             style={styles.containerIcons}
           />
         </TouchableOpacity>
-        <View style={styles.mapFMCMContainerSeparator}></View>
+        <View style={styles.mapFMCMContainerSeparator} />
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -216,30 +299,29 @@ const Map = () => {
           }}
           style={styles.changeMapMode}
         >
-          <FontAwesome5 name="map" size={25} style={styles.containerIcons} />
+          <Feather
+            name="map"
+            size={styles.containerIcons.size}
+            style={styles.containerIcons}
+          />
         </TouchableOpacity>
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   map: {
     flex: 1,
     justifyContent: "center",
   },
-  mapPin: {
-    position: "absolute",
-    alignSelf: "center",
-    paddingBottom: "8%",
-    zIndex: 5,
-  },
   carPinView: {
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center",
     height: "10%",
-    bottom: "4.25%",
+    bottom: "50%",
+    position: "absolute",
   },
   carPin: {
     resizeMode: "contain",
@@ -249,12 +331,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "absolute",
-    right: width * 0.05,
-    bottom: height * 0.15,
+    right: "5%",
+    bottom: "20%",
     backgroundColor: colors.textInput.backgroundColor,
     borderRadius: border.borderRadius,
     borderWidth: border.borderWidth,
     borderColor: colors.borderColor,
+    zIndex: 0,
   },
   findMe: {
     flex: 1,
@@ -273,18 +356,61 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   containerIcons: {
+    alignSelf: "center",
     margin: 10,
+    size: 25,
     color: colors.navbar.iconColor,
+  },
+  searchView: {
+    top: height * 0.075,
+    position: "absolute",
+    width: "100%",
+    justifyContent: "center",
+  },
+  searchBack: {
+    color: "white",
+    size: 40,
+    left: "2.5%",
+    paddingBottom: "1.5%",
+  },
+  carListContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+    width: "80%",
+    borderBottomWidth: 1,
+    marginVertical: "2.5%",
+    padding: "5%",
+    fontSize: 18,
+    borderColor: colors.borderColor,
+  },
+  iconStyle: {
+    color: colors.quaternaryText,
+    size: 30,
+    position: "absolute",
+    right: "2.5%",
+  },
+  carNameText: {
+    fontSize: 18,
+    color: colors.quaternaryText,
+  },
+  handle: { backgroundColor: colors.quaternaryText, marginTop: 4 },
+  modalTitle: {
+    color: colors.quaternaryText,
+    alignSelf: "center",
+    marginTop: "10%",
+    fontSize: 24,
+  },
+  modalStyle: {
+    backgroundColor: colors.backgroundColor,
   },
 });
 
 const searchStyles = {
   container: {
     flex: 1,
-    width: "85%",
+    width: "70%",
     position: "absolute",
     alignSelf: "center",
-    top: height * 0.075,
   },
   textInputContainer: {
     flexDirection: "row",
@@ -327,5 +453,3 @@ const searchStyles = {
     height: 20,
   },
 };
-
-export default Map;

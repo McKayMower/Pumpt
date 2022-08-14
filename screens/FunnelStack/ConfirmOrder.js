@@ -23,8 +23,8 @@ export default function ConfirmOrder({ route }) {
   const db = getFirestore();
   const auth = getAuth();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
-
-  const { selectedCar, location, day, time } = route.params;
+  const [customerID, setCustomerID] = useState();
+  const { location, day, time, selectedCar } = route.params;
   const [loading, setLoading] = useState(false);
   const [car, setCar] = useState(selectedCar);
   const billingDetails = {
@@ -75,7 +75,11 @@ export default function ConfirmOrder({ route }) {
       .then(async (res) => {
         console.log("created customer: ", res.data.customer);
         const newDoc = doc(db, "Users", auth.currentUser.email);
-        await updateDoc(newDoc, { stripeCustomerId: res.data.customer.id });
+        await updateDoc(newDoc, { stripeCustomerId: res.data.customer.id })
+          .then(() => {
+            setCustomerID(res.data.customer.id);
+          })
+          .catch((error) => ReportError(error));
       })
       .catch((error) => ReportError(error));
   };
@@ -88,6 +92,7 @@ export default function ConfirmOrder({ route }) {
       .then((snapshot) => {
         if (snapshot.exists) {
           ID = snapshot.data().stripeCustomerId;
+          setCustomerID(ID);
         }
         // console.log("ID from db", ID);
         !ID && createCustomer();
@@ -111,13 +116,27 @@ export default function ConfirmOrder({ route }) {
 
   const openPaymentSheet = async () => {
     await presentPaymentSheet()
-      .then(({ error }) => {
+      .then(async (res) => {
         //send customer ID to a client list on server. Can list it in worker app.
-        if (!error) {
-          Alert.alert(
-            "Success",
-            "Your payment method has been saved. You will be charged when we fill your tank."
-          );
+        if (!res.error) {
+          //send data to server
+          const body = {
+            car: car,
+            carLocation: location,
+            day: day,
+            time: time,
+            stripeCustomerId: customerID,
+          };
+          
+          await axios
+            .post(`${REACT_APP_PUMPT_API_URL}/place-order`, body)
+            .then(() =>
+              Alert.alert(
+                "Success",
+                "Your payment method has been saved. You will be charged when we fill your tank."
+              )
+            )
+            .catch((error) => ReportError(error));
           setLoading(false);
           //send user informations to database
         }
@@ -161,7 +180,17 @@ export default function ConfirmOrder({ route }) {
             </Text>
           </Text>
           <Text style={[text.profileText, styles.scheduleText]}>
-            Location: <Text style={styles.pickedText}>{location}</Text>
+            Location:{"\n\t"}
+            <Text style={styles.pickedText}>
+              Street: {location.name}
+              {"\n\t"}
+              City: {location.city}
+              {"\n\t"}
+              Zipcode: {location.zipcode}
+              {"\n\t"}
+              State: {location.state}
+              {"\n\t"}
+            </Text>
           </Text>
           <View style={styles.disclaimerContainer}>
             <Text
@@ -175,10 +204,11 @@ export default function ConfirmOrder({ route }) {
               </Text>{" "}
               Pumpt does not store or hold any payment details given by our
               users. Payment information is entirely handled and processed
-              through {""}
+              through
               <Text style={button.text_tertiary} onPress={onStripePressed}>
-                Stripe
-              </Text>{" "}
+                {" "}
+                Stripe{" "}
+              </Text>
               and your payment will be charged after we fill you up.
             </Text>
           </View>
@@ -210,6 +240,7 @@ const styles = StyleSheet.create({
     marginBottom: "2.5%",
   },
   scheduleText: {
+    marginVertical: "1.5%",
     color: colors.logoColor,
     width: "80%",
     textAlign: "justify",
