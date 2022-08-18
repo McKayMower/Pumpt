@@ -3,46 +3,36 @@ import { Feather } from "react-native-vector-icons";
 import { StyleSheet } from "react-native";
 import { border, colors } from "../styles";
 import ProfileStack from "../screens/TabNavProfileStack/ProfileStack";
-import OrderStack from "../screens/TabNavOrderStack/OrderStack";
 import Home from "../screens/Home";
 const TabNav = createMaterialBottomTabNavigator();
+
 export default function HomeNavigator() {
   return (
-      <TabNav.Navigator
-        activeColor={colors.logoColor}
-        labeled={false}
-        barStyle={styles.navbar}
-      >
-        <TabNav.Screen
-          name="Home"
-          component={Home}
-          options={{
-            tabBarIcon: ({ color }) => (
-              <Feather
-                name="home"
-                color={color}
-                size={30}
-                style={styles.icon}
-              />
-            ),
-          }}
-        />
-        <TabNav.Screen
-          name="Profile"
-          component={ProfileStack}
-          options={{
-            tabBarLabel: "Profile",
-            tabBarIcon: ({ color }) => (
-              <Feather
-                name="user"
-                color={color}
-                size={30}
-                style={styles.icon}
-              />
-            ),
-          }}
-        />
-      </TabNav.Navigator>
+    <TabNav.Navigator
+      activeColor={colors.logoColor}
+      labeled={false}
+      barStyle={styles.navbar}
+    >
+      <TabNav.Screen
+        name="Home"
+        component={Home}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" color={color} size={30} style={styles.icon} />
+          ),
+        }}
+      />
+      <TabNav.Screen
+        name="Profile"
+        component={ProfileStack}
+        options={{
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" color={color} size={30} style={styles.icon} />
+          ),
+        }}
+      />
+    </TabNav.Navigator>
   );
 }
 
